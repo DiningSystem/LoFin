@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# LoFin local runtime data
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+archives/
+data/
+.ruff_cache/
+.mypy_cache/
