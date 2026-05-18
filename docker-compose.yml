@@ -1,0 +1,58 @@
+services:
+  api:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis, qdrant, ollama]
+    volumes:
+      - ./archives:/app/archives
+  worker:
+    build: .
+    command: python -m lofin.workers.scheduler
+    env_file: .env
+    depends_on: [postgres, redis, qdrant, ollama]
+    volumes:
+      - ./archives:/app/archives
+  dashboard:
+    build: .
+    command: streamlit run dashboard/app.py --server.address 0.0.0.0 --server.port 8501
+    env_file: .env
+    environment:
+      LOFIN_API_URL: http://api:8000
+    ports: ["8501:8501"]
+    depends_on: [api]
+    volumes:
+      - ./dashboard:/app/dashboard:ro
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: lofin
+      POSTGRES_USER: lofin
+      POSTGRES_PASSWORD: lofin
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  qdrant:
+    image: qdrant/qdrant:v1.9.2
+    ports: ["6333:6333"]
+    volumes:
+      - qdrant_data:/qdrant/storage
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+volumes:
+  postgres_data:
+  qdrant_data:
+  ollama_data:
